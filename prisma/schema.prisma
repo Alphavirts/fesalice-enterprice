@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  STAFF
+  VIEWER
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  plan        String   @default("free")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  users       User[]
+  clients     Client[]
+  simBatches  SIMBatch[]
+  simCards    SIMCard[]
+  auditLogs   AuditLog[]
+  aiLogs      AILog[]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  role          Role      @default(STAFF)
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  isActive      Boolean   @default(true)
+  
+  auditLogs     AuditLog[]
+}
+
+model Client {
+  id            String   @id @default(cuid())
+  name          String
+  phone         String
+  idNumber      String   @unique // Encrypted at rest
+  serialNumber  String?
+  registrationDate DateTime @default(now())
+  status        String   @default("Active")
+  notes         String?
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  assignments   Assignment[]
+}
+
+model SIMBatch {
+  id            String   @id @default(cuid())
+  batchId       String   @unique
+  serialStart   String
+  serialEnd     String
+  dateReceived  DateTime @default(now())
+  totalSIMs     Int
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  
+  simCards      SIMCard[]
+}
+
+model SIMCard {
+  id            String   @id @default(cuid())
+  serialNumber  String   @unique
+  status        String   @default("Available")
+  batchId       String
+  batch         SIMBatch @relation(fields: [batchId], references: [id])
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  
+  assignments   Assignment[]
+}
+
+model Assignment {
+  id            String   @id @default(cuid())
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id])
+  simCardId     String
+  simCard       SIMCard  @relation(fields: [simCardId], references: [id])
+  assignedAt    DateTime @default(now())
+  
+  @@unique([clientId, simCardId])
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  action        String
+  entity        String?
+  entityId      String?
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+}
+
+model AILog {
+  id            String   @id @default(cuid())
+  query         String
+  response      String
+  type          String   // dashboard_insight, nl_query, predictive
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt     DateTime @default(now())
+}
