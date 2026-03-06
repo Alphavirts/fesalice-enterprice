@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { useEffect } from "react";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
+import { Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 // Configure NProgress
@@ -26,7 +27,9 @@ function RouteProgressBar() {
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <>
-            <RouteProgressBar />
+            <Suspense fallback={null}>
+                <RouteProgressBar />
+            </Suspense>
             <Toaster position="top-right" richColors closeButton />
             {children}
         </>

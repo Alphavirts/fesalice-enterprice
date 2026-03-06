@@ -20,7 +20,6 @@
     "next-auth": "^4.24.13",
     "nprogress": "^0.2.0",
     "openai": "^6.25.0",
-    "prisma": "^6.19.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "shadcn-ui": "^0.9.5",
@@ -30,6 +29,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

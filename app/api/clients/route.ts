@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { createAuditLog } from "@/lib/audit";
 import { z } from "zod";
 
-const clientSchema = z.z.object({
+const clientSchema = z.object({
     name: z.string().min(2),
     phone: z.string().min(10),
     idNumber: z.string(),
