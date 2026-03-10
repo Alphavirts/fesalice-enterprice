@@ -16,23 +16,52 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        // Try Supabase Auth first
+        const { data: authData, error: authError } = await (await import("@/lib/supabase")).supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
         });
 
-        if (!user || !user.password) return null;
+        if (!authError && authData.user) {
+          // Get profile data
+          const { data: profile } = await (await import("@/lib/supabase")).supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", authData.user.id)
+            .single();
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
+          return {
+            id: authData.user.id,
+            email: authData.user.email!,
+            name: profile?.full_name || authData.user.email?.split("@")[0],
+            role: profile?.role || "user",
+            tenantId: "default", // Supabase doesn't use the Prisma tenantId by default
+          };
+        }
 
-        if (!isValid) return null;
+        // Fallback to local Prisma (for development/legacy)
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          tenantId: user.tenantId,
-        };
+          if (user && user.password) {
+            const isValid = await bcrypt.compare(credentials.password, user.password);
+            if (isValid) {
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                tenantId: user.tenantId,
+              };
+            }
+          }
+        } catch (e) {
+          console.error("Prisma lookup failed:", e);
+        }
+
+        return null;
       },
     }),
   ],

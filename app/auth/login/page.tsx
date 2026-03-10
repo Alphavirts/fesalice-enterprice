@@ -87,9 +87,16 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">
-              {authMethod === "password" ? "Password" : "OTP Code"}
-            </label>
+            <div className="flex justify-between items-center ml-1">
+              <label className="text-sm font-bold text-slate-700">
+                {authMethod === "password" ? "Password" : "OTP Code"}
+              </label>
+              {authMethod === "password" && (
+                <Link href="/auth/forgot-password" size="sm" className="text-[11px] font-bold text-blue-600 hover:underline">
+                  Forgot password?
+                </Link>
+              )}
+            </div>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                 {authMethod === "password" ? <Lock className="w-4 h-4" /> : <Key className="w-4 h-4" />}
@@ -107,8 +114,11 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-8 text-center">
-            <p className="text-xs text-slate-400 font-medium tracking-tight">
+        <div className="mt-8 text-center pt-6 border-t border-slate-50 space-y-4">
+            <p className="text-xs text-slate-400 font-medium">
+                Don't have an account? <Link href="/auth/signup" className="text-blue-600 font-bold hover:underline">Create Account</Link>
+            </p>
+            <p className="text-[10px] text-slate-300 font-medium tracking-tight">
                 © 2026 Fesalice Enterprise. All rights reserved.
             </p>
         </div>

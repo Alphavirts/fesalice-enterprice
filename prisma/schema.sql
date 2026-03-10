@@ -5,8 +5,18 @@ create table profiles (
   id uuid references auth.users on delete cascade primary key,
   full_name text,
   username text unique,
+  phone_number text unique,
   role text default 'user' check (role in ('admin', 'user')),
   avatar_url text,
+  is_verified boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Password history to prevent reuse
+create table password_history (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade,
+  password_hash text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
