@@ -3,12 +3,13 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { Providers } from "@/components/providers";
+import AppLayout from "@/components/app-layout";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
-  title: "Fesalice Enterprise - Business Management System",
-  description: "Scalable multi-tenant SaaS for business operations",
+  title: "Fesalice Enterprise - SIM Distribution System",
+  description: "Advanced SIM card inventory and distribution management system",
 };
 
 export default function RootLayout({
@@ -21,7 +22,9 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased selection:bg-blue-100 selection:text-blue-900`}>
         <AuthProvider>
           <Providers>
-            {children}
+            <AppLayout>
+              {children}
+            </AppLayout>
           </Providers>
         </AuthProvider>
       </body>
