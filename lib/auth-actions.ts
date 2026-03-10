@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -16,15 +16,15 @@ export async function handleSignUp(formData: {
   fullName: string 
 }) {
   const { data, error } = await supabase.auth.signUp({
-    email: formData.email,
-    phone: formData.phone,
+    email: formData.email || undefined,
+    phone: formData.phone || undefined,
     password: formData.password,
     options: {
       data: {
         full_name: formData.fullName,
       }
     }
-  });
+  } as any);
 
   if (error) return { error: error.message };
   
@@ -37,7 +37,7 @@ export async function handleVerifyOTP(emailOrPhone: string, token: string, type:
     phone: !emailOrPhone.includes('@') ? emailOrPhone : undefined,
     token,
     type: type === 'signup' ? 'signup' : 'recovery',
-  });
+  } as any);
 
   if (error) return { error: error.message };
 

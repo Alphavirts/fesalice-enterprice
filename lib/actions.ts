@@ -88,3 +88,29 @@ export async function getActivityLogs() {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function getUsers() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("full_name", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function getDistributionStats() {
+  const { data, error } = await supabase
+    .from("distributions")
+    .select("count, created_at");
+
+  if (error) throw new Error(error.message);
+  
+  const monthlyData: { [key: string]: number } = {};
+  data.forEach((d: any) => {
+    const month = new Date(d.created_at).toLocaleString('default', { month: 'short' });
+    monthlyData[month] = (monthlyData[month] || 0) + d.count;
+  });
+
+  return Object.entries(monthlyData).map(([name, value]) => ({ name, value }));
+}

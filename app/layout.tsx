@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { Providers } from "@/components/providers";
 import AppLayout from "@/components/app-layout";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
             <AppLayout>
               {children}
             </AppLayout>
+            <Toaster position="top-right" richColors />
           </Providers>
         </AuthProvider>
       </body>

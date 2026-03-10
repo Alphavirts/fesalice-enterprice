@@ -1,13 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { Smartphone, Lock, Mail, ShieldCheck, Key } from "lucide-react";
+import { Smartphone, Lock, Mail, ShieldCheck, Key, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [role, setRole] = useState<"admin" | "user">("admin");
   const [authMethod, setAuthMethod] = useState<"password" | "otp">("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.error("Invalid credentials. Please try again.");
+      } else {
+        toast.success("Login successful!");
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-blue-50/50 p-4">
@@ -71,7 +103,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form */}
-        <div className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-bold text-slate-700 ml-1">Email</label>
             <div className="relative group">
@@ -80,6 +112,9 @@ export default function LoginPage() {
               </div>
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@fesalice.com"
                 className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium placeholder:text-slate-400"
               />
@@ -92,7 +127,7 @@ export default function LoginPage() {
                 {authMethod === "password" ? "Password" : "OTP Code"}
               </label>
               {authMethod === "password" && (
-                <Link href="/auth/forgot-password" size="sm" className="text-[11px] font-bold text-blue-600 hover:underline">
+                <Link href="/auth/forgot-password" className="text-[11px] font-bold text-blue-600 hover:underline">
                   Forgot password?
                 </Link>
               )}
@@ -103,16 +138,24 @@ export default function LoginPage() {
               </div>
               <input
                 type={authMethod === "password" ? "password" : "text"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder={authMethod === "password" ? "••••••••" : "Enter 6-digit OTP"}
                 className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all font-medium placeholder:text-slate-400"
               />
             </div>
           </div>
 
-          <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm tracking-wide hover:bg-slate-800 active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-2">
-            Login as {role === "admin" ? "Admin" : "User"}
+          <button 
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm tracking-wide hover:bg-slate-800 active:scale-[0.98] transition-all shadow-lg shadow-black/10 mt-2 flex items-center justify-center gap-2"
+          >
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading ? "Logging in..." : `Login as ${role === "admin" ? "Admin" : "User"}`}
           </button>
-        </div>
+        </form>
 
         <div className="mt-8 text-center pt-6 border-t border-slate-50 space-y-4">
             <p className="text-xs text-slate-400 font-medium">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { 
     Download, 
     Calendar, 
@@ -9,7 +10,9 @@ import {
     LineChart as LineIcon,
     ArrowUpRight,
     ArrowDownRight,
-    Search
+    Search,
+    Loader2,
+    AreaChart as AreaIcon
 } from "lucide-react";
 import { 
     ResponsiveContainer, 
@@ -26,22 +29,42 @@ import {
     Pie
 } from "recharts";
 import { cn } from "@/lib/utils";
-
-const data = [
-    { name: "Jan", value: 400 },
-    { name: "Feb", value: 300 },
-    { name: "Mar", value: 600 },
-    { name: "Apr", value: 800 },
-    { name: "May", value: 500 },
-    { name: "Jun", value: 900 },
-];
-
-const pieData = [
-    { name: "Registered", value: 745, color: "#2563eb" },
-    { name: "Unregistered", value: 115, color: "#e2e8f0" },
-];
+import { getDistributionStats, getClients } from "@/lib/actions";
+import { toast } from "sonner";
 
 export default function ReportsPage() {
+    const [chartData, setChartData] = useState<any[]>([]);
+    const [clients, setClients] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [stats, cData] = await Promise.all([
+                    getDistributionStats(),
+                    getClients()
+                ]);
+                setChartData(stats);
+                setClients(cData.sort((a, b) => (b.distributed_sims || 0) - (a.distributed_sims || 0)));
+            } catch (error) {
+                toast.error("Failed to load report data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+            </div>
+        );
+    }
+
+    const totalDistributed = chartData.reduce((acc, curr) => acc + curr.value, 0);
+
     return (
         <div className="p-8 space-y-8 bg-slate-50/50 min-h-screen overflow-y-auto">
             <div className="flex justify-between items-end">
@@ -64,7 +87,7 @@ export default function ReportsPage() {
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { label: "Growth Rate", value: "+12.5%", trend: "up", sub: "Since last month" },
+                    { label: "Total Distributed", value: totalDistributed.toLocaleString(), trend: "up", sub: "Since last month" },
                     { label: "Registration Efficiency", value: "86.6%", trend: "up", sub: "+2.4% from avg" },
                     { label: "Avg. Distribution Time", value: "4.2m", trend: "down", sub: "Optimized by 12%" },
                 ].map((stat, i) => (
@@ -95,45 +118,49 @@ export default function ReportsPage() {
                         <p className="text-sm text-slate-400 font-medium">Monthly SIM assignment volume</p>
                     </div>
                     <div className="flex gap-2">
-                        <button className="p-2 bg-slate-900 text-white rounded-xl"><AreaChart size={18} /></button>
+                        <button className="p-2 bg-slate-900 text-white rounded-xl"><AreaIcon size={18} /></button>
                         <button className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors"><BarChart3 size={18} /></button>
                     </div>
                 </div>
                 <div className="h-[350px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data}>
-                            <defs>
-                                <linearGradient id="reportGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15}/>
-                                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis 
-                                dataKey="name" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                                dy={10}
-                            />
-                            <YAxis 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                            />
-                            <Tooltip 
-                                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}
-                            />
-                            <Area 
-                                type="smooth" 
-                                dataKey="value" 
-                                stroke="#2563eb" 
-                                strokeWidth={4}
-                                fillOpacity={1} 
-                                fill="url(#reportGradient)" 
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    {chartData.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-slate-400 italic">No distribution data available for chart.</div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData}>
+                                <defs>
+                                    <linearGradient id="reportGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15}/>
+                                        <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                    dy={10}
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }}
+                                />
+                                <Area 
+                                    type="monotone" 
+                                    dataKey="value" 
+                                    stroke="#2563eb" 
+                                    strokeWidth={4}
+                                    fillOpacity={1} 
+                                    fill="url(#reportGradient)" 
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
             </div>
 
@@ -144,7 +171,10 @@ export default function ReportsPage() {
                         <ResponsiveContainer width="100%" height="100%">
                             <RePieChart>
                                 <Pie
-                                    data={pieData}
+                                    data={[
+                                        { name: "Registered", value: 745, color: "#2563eb" },
+                                        { name: "Unregistered", value: 115, color: "#e2e8f0" },
+                                    ]}
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={70}
@@ -152,7 +182,10 @@ export default function ReportsPage() {
                                     paddingAngle={8}
                                     dataKey="value"
                                 >
-                                    {pieData.map((entry, index) => (
+                                    {[
+                                        { color: "#2563eb" },
+                                        { color: "#e2e8f0" },
+                                    ].map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Pie>
@@ -169,24 +202,21 @@ export default function ReportsPage() {
                 <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
                     <h3 className="text-sm font-bold text-slate-900 mb-6">Top Performing Clients</h3>
                     <div className="space-y-4">
-                        {[
-                            { name: "Acme Distribution", value: 124, color: "bg-blue-600" },
-                            { name: "Global Connect", value: 86, color: "bg-indigo-500" },
-                            { name: "TechLine Ventures", value: 43, color: "bg-slate-400" },
-                        ].map((item, i) => (
+                        {clients.slice(0, 5).map((item, i) => (
                             <div key={i} className="space-y-2">
                                 <div className="flex justify-between text-xs font-bold">
                                     <span className="text-slate-900">{item.name}</span>
-                                    <span className="text-slate-400">{item.value} SIMs</span>
+                                    <span className="text-slate-400">{item.distributed_sims || 0} SIMs</span>
                                 </div>
                                 <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
                                     <div 
-                                        className={cn("h-full rounded-full transition-all duration-1000", item.color)} 
-                                        style={{ width: `${(item.value / 150) * 100}%` }}
+                                        className={cn("h-full rounded-full transition-all duration-1000", i === 0 ? "bg-blue-600" : i === 1 ? "bg-indigo-500" : "bg-slate-400")} 
+                                        style={{ width: `${Math.min(((item.distributed_sims || 0) / (clients[0]?.distributed_sims || 100)) * 100, 100)}%` }}
                                     />
                                 </div>
                             </div>
                         ))}
+                        {clients.length === 0 && <p className="text-xs text-slate-400 italic">No client data available.</p>}
                     </div>
                 </div>
             </div>

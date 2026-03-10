@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { 
     Plus, 
     Search, 
@@ -10,38 +11,31 @@ import {
     Phone,
     Lock,
     Edit2,
-    Trash2
+    Trash2,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const users = [
-    { 
-        id: "USR-001", 
-        name: "Mugo Fredrick", 
-        role: "Administrator", 
-        email: "mugofredrick919@gmail.com", 
-        status: "Active",
-        avatar: "MF"
-    },
-    { 
-        id: "USR-002", 
-        name: "Jane Smith", 
-        role: "Supervisor", 
-        email: "jane.smith@fesalice.com", 
-        status: "Active",
-        avatar: "JS"
-    },
-    { 
-        id: "USR-003", 
-        name: "Sam Wilson", 
-        role: "Operator", 
-        email: "sam.wilson@fesalice.com", 
-        status: "Inactive",
-        avatar: "SW"
-    },
-];
+import { getUsers } from "@/lib/actions";
+import { toast } from "sonner";
 
 export default function UserManagementPage() {
+    const [users, setUsers] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const data = await getUsers();
+                setUsers(data);
+            } catch (error) {
+                toast.error("Failed to load users.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchUsers();
+    }, []);
+
     return (
         <div className="p-8 space-y-8 bg-slate-50/50 min-h-screen">
             <div className="flex justify-between items-end">
@@ -68,24 +62,39 @@ export default function UserManagementPage() {
                 </div>
 
                 <div className="divide-y divide-slate-50">
-                    {users.map((user) => (
+                    {loading ? (
+                        <div className="p-20 flex items-center justify-center text-slate-400">
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className="p-20 text-center text-slate-400 italic">No users found.</div>
+                    ) : users.map((user) => (
                         <div key={user.id} className="p-6 flex items-center justify-between hover:bg-slate-50/30 transition-colors group">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-blue-600 rounded-[1.25rem] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-100">
-                                    {user.avatar}
+                                    {user.full_name?.charAt(0) || 'U'}
                                 </div>
                                 <div>
                                     <h4 className="text-[15px] font-bold text-slate-900 flex items-center gap-2">
-                                        {user.name}
+                                        {user.full_name || user.email}
                                         {user.role === "Administrator" && <Shield size={14} className="text-blue-600" />}
                                     </h4>
                                     <div className="flex items-center gap-3 text-xs text-slate-400 font-medium mt-0.5">
-                                        <span className="text-slate-500 font-bold">{user.role}</span>
+                                        <span className="text-slate-500 font-bold">{user.role || 'Operator'}</span>
                                         <span className="text-slate-200">•</span>
                                         <div className="flex items-center gap-1">
                                             <Mail size={12} />
                                             {user.email}
                                         </div>
+                                        {user.phone_number && (
+                                            <>
+                                                <span className="text-slate-200">•</span>
+                                                <div className="flex items-center gap-1">
+                                                    <Phone size={12} />
+                                                    {user.phone_number}
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -93,9 +102,9 @@ export default function UserManagementPage() {
                             <div className="flex items-center gap-6">
                                 <span className={cn(
                                     "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                                    user.status === "Active" ? "text-emerald-600 bg-emerald-50" : "text-slate-400 bg-slate-100"
+                                    user.is_verified ? "text-emerald-600 bg-emerald-50" : "text-slate-400 bg-slate-100"
                                 )}>
-                                    {user.status}
+                                    {user.is_verified ? "Verified" : "Pending"}
                                 </span>
                                 
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
