@@ -60,6 +60,7 @@ export default function LoginPage() {
         <div className="space-y-4 mb-8">
           <div className="flex bg-slate-100 p-1 rounded-2xl">
             <button
+              type="button"
               onClick={() => setRole("admin")}
               className={cn(
                 "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
@@ -70,6 +71,7 @@ export default function LoginPage() {
               Admin
             </button>
             <button
+              type="button"
               onClick={() => setRole("user")}
               className={cn(
                 "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
@@ -82,6 +84,7 @@ export default function LoginPage() {
 
           <div className="flex bg-slate-100 p-1 rounded-2xl">
             <button
+              type="button"
               onClick={() => setAuthMethod("password")}
               className={cn(
                 "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
@@ -91,6 +94,7 @@ export default function LoginPage() {
               Password
             </button>
             <button
+              type="button"
               onClick={() => setAuthMethod("otp")}
               className={cn(
                 "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
