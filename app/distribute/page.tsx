@@ -20,11 +20,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getClients, getBatches, createDistribution } from "@/lib/actions";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const steps = ["Select Client", "Batch & Count", "Verification", "Complete"];
 
 export default function DistributePage() {
     const { data: session } = useSession();
+    const router = useRouter();
     const [activeStep, setActiveStep] = useState(0);
     const [clients, setClients] = useState<any[]>([]);
     const [batches, setBatches] = useState<any[]>([]);
@@ -331,7 +333,7 @@ export default function DistributePage() {
                             </div>
 
                             <button 
-                                onClick={() => window.location.href = '/dashboard'}
+                                onClick={() => router.push('/dashboard')}
                                 className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
                             >
                                 Done & Back to Dashboard

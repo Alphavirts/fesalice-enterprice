@@ -7,96 +7,97 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
-  MANAGER
-  STAFF
-  VIEWER
-}
-
 model Tenant {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  logoUrl     String?
-  plan        String   @default("free")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  users       User[]
-  clients     Client[]
-  simBatches  SIMBatch[]
-  simCards    SIMCard[]
-  auditLogs   AuditLog[]
-  aiLogs      AILog[]
+  id         String     @id @default(cuid())
+  name       String
+  slug       String     @unique
+  logoUrl    String?
+  plan       String     @default("free")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  aiLogs     AILog[]
+  auditLogs  AuditLog[]
+  clients    Client[]
+  simBatches SIMBatch[]
+  simCards   SIMCard[]
+  users      User[]
 }
 
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
   password      String
-  name          String?
+  fullName      String?   @map("full_name")
   role          Role      @default(STAFF)
   tenantId      String
   tenant        Tenant    @relation(fields: [tenantId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  isActive      Boolean   @default(true) @map("is_active")
+  isVerified    Boolean   @default(false) @map("is_verified")
   
-  auditLogs     AuditLog[]
+  auditLogs       AuditLog[]
+  distributions   Distribution[]
+  passwordHistory PasswordHistory[]
+
+  @@map("profiles")
 }
 
 model Client {
   id            String   @id @default(cuid())
   name          String
   phone         String
-  idNumber      String   @unique // Encrypted at rest
-  serialNumber  String?
-  registrationDate DateTime @default(now())
+  idNumber      String   @unique @map("id_number")
+  serialNumber  String?  @map("serial_number")
+  registrationDate DateTime @default(now()) @map("registration_date")
   status        String   @default("Active")
   notes         String?
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   assignments   Assignment[]
+  distributions Distribution[]
+
+  @@map("clients")
 }
 
 model SIMBatch {
   id            String   @id @default(cuid())
-  batchId       String   @unique
-  serialStart   String
-  serialEnd     String
-  dateReceived  DateTime @default(now())
-  totalSIMs     Int
+  batchId       String   @unique @map("batch_id")
+  serialStart   String   @map("serial_start")
+  serialEnd     String   @map("serial_end")
+  dateReceived  DateTime @default(now()) @map("date_received")
+  totalSIMs     Int      @map("total_sims")
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
   
   simCards      SIMCard[]
+  distributions Distribution[]
+
+  @@map("batches")
 }
 
 model SIMCard {
-  id            String   @id @default(cuid())
-  serialNumber  String   @unique
-  status        String   @default("Available")
-  batchId       String
-  batch         SIMBatch @relation(fields: [batchId], references: [id])
-  tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  
-  assignments   Assignment[]
+  id           String       @id @default(cuid())
+  serialNumber String       @unique
+  status       String       @default("Available")
+  batchId      String
+  tenantId     String
+  assignments  Assignment[]
+  batch        SIMBatch     @relation(fields: [batchId], references: [id])
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
 }
 
 model Assignment {
-  id            String   @id @default(cuid())
-  clientId      String
-  client        Client   @relation(fields: [clientId], references: [id])
-  simCardId     String
-  simCard       SIMCard  @relation(fields: [simCardId], references: [id])
-  assignedAt    DateTime @default(now())
-  
+  id         String   @id @default(cuid())
+  clientId   String
+  simCardId  String
+  assignedAt DateTime @default(now())
+  client     Client   @relation(fields: [clientId], references: [id])
+  simCard    SIMCard  @relation(fields: [simCardId], references: [id])
+
   @@unique([clientId, simCardId])
 }
 
@@ -104,14 +105,16 @@ model AuditLog {
   id            String   @id @default(cuid())
   action        String
   entity        String?
-  entityId      String?
-  userId        String?
+  entityId      String?  @map("entity_id")
+  userId        String?  @map("user_id")
   user          User?    @relation(fields: [userId], references: [id])
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  ipAddress     String?
-  userAgent     String?
-  createdAt     DateTime @default(now())
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs")
 }
 
 model AILog {
@@ -121,5 +124,40 @@ model AILog {
   type          String   // dashboard_insight, nl_query, predictive
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
-  createdAt     DateTime @default(now())
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("ai_logs")
+}
+
+model Distribution {
+  id             String   @id @default(cuid())
+  clientId       String   @map("client_id")
+  client         Client   @relation(fields: [clientId], references: [id])
+  batchId        String   @map("batch_id")
+  batch          SIMBatch @relation(fields: [batchId], references: [id])
+  count          Int
+  distributedBy  String   @map("distributed_by")
+  distributor    User     @relation(fields: [distributedBy], references: [id])
+  otpVerified    Boolean  @default(false) @map("otp_verified")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("distributions")
+}
+
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("password_history")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  STAFF
+  VIEWER
 }

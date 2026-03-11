@@ -10,40 +10,55 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function getBatches() {
-  const { data, error } = await supabase
-    .from("batches")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("batches")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
-  return data;
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error("Error in getBatches:", error.message);
+    throw new Error(error.message || "Failed to fetch batches");
+  }
 }
 
 export async function createBatch(batchData: { id: string, total_sims: number }) {
-  const { data, error } = await supabase
-    .from("batches")
-    .insert([
-      { 
-        id: batchData.id, 
-        total_sims: batchData.total_sims, 
-        remaining_sims: batchData.total_sims,
-        status: 'Full'
-      }
-    ]);
+  try {
+    const { data, error } = await supabase
+      .from("batches")
+      .insert([
+        { 
+          id: batchData.id, 
+          total_sims: batchData.total_sims, 
+          remaining_sims: batchData.total_sims,
+          status: 'Full'
+        }
+      ]);
 
-  if (error) throw new Error(error.message);
-  revalidatePath("/batches");
-  return data;
+    if (error) throw error;
+    revalidatePath("/batches");
+    return data;
+  } catch (error: any) {
+    console.error("Error in createBatch:", error.message);
+    throw new Error(error.message || "Failed to create batch");
+  }
 }
 
 export async function getClients() {
-  const { data, error } = await supabase
-    .from("clients")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
-  return data;
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error("Error in getClients:", error.message);
+    throw new Error(error.message || "Failed to fetch clients");
+  }
 }
 
 export async function createDistribution(distributionData: { 
@@ -52,41 +67,51 @@ export async function createDistribution(distributionData: {
   count: number,
   distributed_by: string 
 }) {
-  const { data, error } = await supabase
-    .from("distributions")
-    .insert([
-      { 
-        ...distributionData,
-        otp_verified: true // In production, this would be verified before insert
+  try {
+    const { data, error } = await supabase
+      .from("distributions")
+      .insert([
+        { 
+          ...distributionData,
+          otp_verified: true 
+        }
+      ]);
+
+    if (error) throw error;
+    
+    // Create activity log
+    await supabase.from("activity_logs").insert([
+      {
+        user_id: distributionData.distributed_by,
+        action: "SIM Distribution",
+        entity_type: "distribution",
+        details: `Distributed ${distributionData.count} SIMs to client ${distributionData.client_id}`
       }
     ]);
 
-  if (error) throw new Error(error.message);
-  
-  // Create activity log
-  await supabase.from("activity_logs").insert([
-    {
-      user_id: distributionData.distributed_by,
-      action: "SIM Distribution",
-      entity_type: "distribution",
-      details: `Distributed ${distributionData.count} SIMs to client ${distributionData.client_id}`
-    }
-  ]);
-
-  revalidatePath("/dashboard");
-  revalidatePath("/distribute");
-  return data;
+    revalidatePath("/dashboard");
+    revalidatePath("/distribute");
+    return data;
+  } catch (error: any) {
+    console.error("Error in createDistribution:", error.message);
+    throw new Error(error.message || "Failed to process distribution");
+  }
 }
 
 export async function getActivityLogs() {
-  const { data, error } = await supabase
-    .from("activity_logs")
-    .select("*, profiles(full_name)")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  try {
+    const { data, error } = await supabase
+      .from("activity_logs")
+      .select("*, profiles(full_name)")
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-  if (error) throw new Error(error.message);
-  return data;
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error("Error in getActivityLogs:", error.message);
+    return []; // Return empty array instead of crashing for non-critical dashboard logs
+  }
 }
 
 export async function getUsers() {

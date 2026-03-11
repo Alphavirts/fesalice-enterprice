@@ -36,8 +36,10 @@ export default function ReportsPage() {
     const [chartData, setChartData] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         const fetchData = async () => {
             try {
                 const [stats, cData] = await Promise.all([
@@ -122,10 +124,10 @@ export default function ReportsPage() {
                         <button className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:text-slate-900 transition-colors"><BarChart3 size={18} /></button>
                     </div>
                 </div>
-                <div className="h-[350px] w-full">
+                <div className="h-[350px] w-full min-h-[350px]">
                     {chartData.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-slate-400 italic">No distribution data available for chart.</div>
-                    ) : (
+                    ) : isMounted ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData}>
                                 <defs>
@@ -160,6 +162,8 @@ export default function ReportsPage() {
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
+                    ) : (
+                        <div className="w-full h-full bg-slate-50 animate-pulse rounded-[1.5rem]" />
                     )}
                 </div>
             </div>
@@ -167,31 +171,35 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-12">
                  <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col items-center">
                     <h3 className="text-sm font-bold text-slate-900 mb-8 self-start">Registration Rate</h3>
-                    <div className="h-[250px] w-full relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RePieChart>
-                                <Pie
-                                    data={[
-                                        { name: "Registered", value: 745, color: "#2563eb" },
-                                        { name: "Unregistered", value: 115, color: "#e2e8f0" },
-                                    ]}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={70}
-                                    outerRadius={90}
-                                    paddingAngle={8}
-                                    dataKey="value"
-                                >
-                                    {[
-                                        { color: "#2563eb" },
-                                        { color: "#e2e8f0" },
-                                    ].map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </RePieChart>
-                        </ResponsiveContainer>
+                    <div className="h-[250px] w-full relative min-h-[250px]">
+                        {isMounted ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RePieChart>
+                                    <Pie
+                                        data={[
+                                            { name: "Registered", value: 745, color: "#2563eb" },
+                                            { name: "Unregistered", value: 115, color: "#e2e8f0" },
+                                        ]}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={70}
+                                        outerRadius={90}
+                                        paddingAngle={8}
+                                        dataKey="value"
+                                    >
+                                        {[
+                                            { color: "#2563eb" },
+                                            { color: "#e2e8f0" },
+                                        ].map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </RePieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="w-full h-full bg-slate-50 animate-pulse rounded-full" />
+                        )}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
                             <p className="text-3xl font-black text-slate-900">86%</p>
                             <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Efficiency</p>
