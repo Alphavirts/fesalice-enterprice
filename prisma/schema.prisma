@@ -72,6 +72,8 @@ model SIMBatch {
   totalSIMs     Int      @map("total_sims")
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
   
   simCards      SIMCard[]
   distributions Distribution[]
@@ -81,24 +83,29 @@ model SIMBatch {
 
 model SIMCard {
   id           String       @id @default(cuid())
-  serialNumber String       @unique
+  serialNumber String       @unique @map("serial_number")
   status       String       @default("Available")
-  batchId      String
-  tenantId     String
+  batchId      String       @map("batch_id")
+  tenantId     String       @map("tenant_id")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
   assignments  Assignment[]
   batch        SIMBatch     @relation(fields: [batchId], references: [id])
   tenant       Tenant       @relation(fields: [tenantId], references: [id])
+
+  @@map("sim_cards")
 }
 
 model Assignment {
   id         String   @id @default(cuid())
-  clientId   String
-  simCardId  String
-  assignedAt DateTime @default(now())
+  clientId   String   @map("client_id")
+  simCardId  String   @map("sim_card_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
   client     Client   @relation(fields: [clientId], references: [id])
   simCard    SIMCard  @relation(fields: [simCardId], references: [id])
 
   @@unique([clientId, simCardId])
+  @@map("assignments")
 }
 
 model AuditLog {
